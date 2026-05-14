@@ -1,5 +1,5 @@
 const axios = require('axios');
-const config = require('../config.json');
+const config = require('../../config.json');
 
 async function getAIResponse(messages, maxIterations = 3) {
   const provider = config.activeProvider;
