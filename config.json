@@ -35,7 +35,7 @@
       "timeout": 60000
     },
     "hapuppy": {
-      "apiKey": "sk-hapuppy-PqKvwIZV8kPBhsUVPP68kbiLzKmSRkh9nZPGLMMl1L8em0wU",
+      "apiKey": "sk-hapuppy-PqKvwIZV8kPBVPP68kbiLzKmSRkh9nZPGLMMl1L8em0wU",
       "baseUrl": "https://beta.hapuppy.com/v1",
       "model": "gemini-2.5-pro",
       "maxTokens": 4096,
@@ -45,13 +45,13 @@
     "nvidia": {
       "apiKey": "${NVIDIA_API_KEY}",
       "baseUrl": "https://api.nvidia.com/v1",
-      "model": "nemotron-3-nano-omni-30b-a3b-reasoning",
+      "model": "nvidia/minimax-m2.7",
       "maxTokens": 4096,
       "temperature": 0.7,
       "timeout": 60000
     },
     "ollama": {
-      "apikey": "43a54bc05a0a4a10a652aff08a662410.P26pNRD4r6P-iYeWE7WUykAy",
+      "apikey": "43a54bc05a0a4a10a652affa662410.P26pNRD4r6P-iYeWE7WUykAy",
       "baseUrl": "https://ollama.com/api/chat",
       "model": "gemma4:e2b",
       "maxTokens": 2048,
