@@ -26,7 +26,7 @@ async function getAIResponse(messages, maxIterations = 3) {
   if (endpoint.endsWith('/v1')) endpoint += '/chat/completions';
   else if (!endpoint.includes('/chat/completions')) endpoint += '/chat/completions';
 
-  // Prepare the request function
+  // Helper to call the AI model
   const callAI = async (msgArray) => {
     const requestBody = { model, messages: msgArray, max_tokens: maxTokens, temperature };
     const response = await axios.post(endpoint, requestBody, {
@@ -40,32 +40,35 @@ async function getAIResponse(messages, maxIterations = 3) {
     return JSON.stringify(data);
   };
 
-  // First call with a system prompt that instructs the AI to output [SEARCH: ...] if needed
+  // System prompt that gives Dora its identity and instructs it to request web searches when needed
   const systemMessage = {
     role: 'system',
-    content: `You are a helpful assistant. If you need real-time information (weather, time, news, etc.) and cannot answer accurately from your training data, output EXACTLY the text: [SEARCH: your search query] on a separate line. Otherwise answer normally.`
+    content: `You are **Dora AI**, a friendly, intelligent assistant created by **MahMUD**.
+You help with coding, answering questions, brainstorming, writing, and problem-solving.
+Always introduce yourself as **Dora AI** when asked who you are. Never claim to be Claude, GPT, Gemini, or any other AI.
+
+If you need real-time information (weather, time, news, etc.) and cannot answer accurately from your training data, output EXACTLY the text: [SEARCH: your search query] on a separate line. Otherwise answer normally.`
   };
 
   let currentMessages = [systemMessage, ...messages];
   let response = await callAI(currentMessages);
 
-  // Check for search marker
+  // Auto‑search loop
   for (let i = 0; i < maxIterations; i++) {
     const searchMatch = response.match(/\[SEARCH:\s*(.*?)\]/i);
-    if (!searchMatch) return response; // No search needed, return answer
+    if (!searchMatch) return response; // No search needed, final answer
 
     const searchQuery = searchMatch[1].trim();
     console.log(`AI requested search: "${searchQuery}"`);
 
-    // Execute search using the existing fetchUrl tool route (or direct call)
+    // Perform a simple web search (Google snippet extraction)
     let searchResult = '';
     try {
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&hl=en`;
       const fetchRes = await axios.get(searchUrl, {
         timeout: 10000,
-        headers: { 'User-Agent': 'Mozilla/5.0' }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
-      // Extract a snippet (crude, but works for demo)
       const body = String(fetchRes.data);
       const snippet = body.match(/<span class="st">([\s\S]*?)<\/span>/i)?.[1] ||
                       body.match(/<div class="BNeawe s3v9rd AP7Wnd">([\s\S]*?)<\/div>/i)?.[1] ||
@@ -75,7 +78,7 @@ async function getAIResponse(messages, maxIterations = 3) {
       searchResult = `Search failed: ${err.message}`;
     }
 
-    // Add search result as a system message and ask AI to finalise
+    // Feed search result back to the AI and re‑prompt
     const resultMessage = {
       role: 'system',
       content: `Search result for "${searchQuery}": ${searchResult}`
