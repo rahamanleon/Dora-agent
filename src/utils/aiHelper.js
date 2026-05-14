@@ -21,7 +21,6 @@ async function getAIResponse(messages, maxIterations = 5) {
   const temperature = providerConfig.temperature || 0.7;
   const timeout = providerConfig.timeout || 120000;
 
-  // Build endpoint
   let endpoint = baseUrl;
   if (endpoint.endsWith('/v1')) endpoint += '/chat/completions';
   else if (!endpoint.includes('/chat/completions')) endpoint += '/chat/completions';
@@ -39,106 +38,123 @@ async function getAIResponse(messages, maxIterations = 5) {
     return JSON.stringify(data);
   };
 
-  // ────── STRONG SYSTEM PROMPT ──────
+  // ────────── SYSTEM PROMPT (strict identity + search rules) ──────────
   const systemMessage = {
     role: 'system',
-    content: `You are Dora AI, a friendly, intelligent assistant  ❣️.
-Always introduce yourself as Dora AI when asked who you are. Never claim to be Claude, GPT, Gemini, or any other AI.
-Never use images. Show your name "Dora AI" every time in a random creative style. .never use "**". styles are"Gothic & Blackletter: 𝕿𝖞𝖕𝖊 𝖘𝖔𝖒𝖊𝖙𝖍𝖎𝖓𝖌 𝖙𝖔 𝖘𝖙𝖆𝖗𝖙 (Fraktur)Cursive & Script: 𝓣𝔂𝓹𝓮 𝓼𝓸𝓶𝓮𝓽𝓱𝓲𝓷𝓰 𝓽𝓸 𝓼𝓽𝓪𝓻𝖙Monospace/Tech: 𝚃𝚢𝚙𝚎 𝚜𝚘𝚖𝚎𝚝𝚑𝚒𝚗𝚐 𝚝𝐨 𝚜𝐭𝐚𝐫𝐭Bold/Modern: 𝗧𝘆𝗽𝗲 𝘀𝗼𝗺𝗲𝘁𝗵𝗶𝗻𝗴 𝘁𝗼 𝘀𝘁𝗮𝗿𝘁Bubbles/Cute: Ⓣⓨⓟⓔ ⓢⓞⓜⓔⓣⓗⓘⓝ◗ ⓣⓞ ⓢⓣⓐⓡⓣItalic/Slanted: 𝘛𝘺𝘱𝘦 𝘴𝘰𝘮𝘦𝘵𝘩𝘪𝘯𝘨 𝘵𝘰 𝘴𝘵𝘢𝘳𝘵Subscript/Superscript: ₜyₚₑ ₛₒₘₑₜₕᵢₙg / ᵀʸᵖᵉ ˢᵒᵐᵉᵗʰⁱⁿᵍDecorative/Fancy: ♥T♥y♥p♥e♥ ♥s♥o♥m♥e♥t♥h♥i♥n♥gSmall Caps: ᴋɴᴏᴡʟᴇᴅɢᴇDouble-Struck: 𝕂𝕖𝕧𝕚𝕟"
+    content: `You are Dora AI, a friendly, intelligent assistant ❣️ from Bangladesh.
+Always introduce yourself as Dora AI. Never claim to be Claude, GPT, Gemini, or any other AI.
+Never use images. Present your name "Dora AI" in a creative unicode style each time, like: 𝗗𝗼𝗿𝗮 𝗔𝗜 or Ⓓⓞⓡⓐ ⒶⒾ or 𝔇𝔬𝔯𝔞 𝔄ℑ – vary it.
 
-**CRITICAL RULE — LIVE DATA:**
-When you receive a system message containing "Search result for ...", that is REAL data freshly fetched from the internet. You MUST use it to answer the user's question directly. NEVER say "I don't have real-time access" or "I can't display current data" or "you can check on Google/weather.com". You already HAVE the data — just present it to the user naturally. This is a strict requirement.
-
-If you truly need information you don't have, output EXACTLY: [SEARCH: your search query]
-Otherwise answer normally.`
+**Search protocol (internal, never shown to user):**
+If you lack information, you may request a web search by outputting EXACTLY: [SEARCH: your query]
+I (the system) will fetch the data and give it to you silently. You MUST then use that data to write a complete, final answer.
+Never mention the search to the user. Never say "I found" or "according to the search" – just present the information naturally.
+If the search returns no data, respond helpfully that you couldn't find the information right now, but DO NOT suggest the user check external websites.`
   };
 
   let currentMessages = [systemMessage, ...messages];
   let response = await callAI(currentMessages);
 
-  // ────── SEARCH LOOP ──────
+  // ────────── SEARCH LOOP (invisible to user) ──────────
   for (let i = 0; i < maxIterations; i++) {
     const searchMatch = response.match(/\[SEARCH:\s*(.*?)\]/i);
-    if (!searchMatch) return response;
+    if (!searchMatch) return response; // final answer, no search needed
 
     const searchQuery = searchMatch[1].trim();
-    console.log(`AI requested search: "${searchQuery}"`);
+    console.log(`🔍 AI requested search: "${searchQuery}"`);
 
     let searchResult = '';
 
-    // ── 🌤️ Weather handler (wttr.in — free, no key, returns plain text) ──
+    // ─── Weather (wttr.in) ───────────────────────────
     if (searchQuery.match(/(weather|forecast|temperature|climate|meteo|humidity|wind|rain|sunny|cloudy|storm)/i)) {
-      try {
-        let city = searchQuery
-          .replace(/(weather|forecast|temperature|climate|meteo|humidity|wind|rain|sunny|cloudy|storm|current|now|today|tonight|tomorrow|live|right now|what'?s the|what is the|how'?s the|how is the)/gi, '')
-          .replace(/\bin\b|\bat\b|\bfor\b|\bnear\b/gi, '')
-          .trim();
-        if (!city || city.length < 2) city = searchQuery.split(/\s+/).pop() || searchQuery;
+      let city = searchQuery
+        .replace(/(weather|forecast|temperature|climate|meteo|humidity|wind|rain|sunny|cloudy|storm|current|now|today|tonight|tomorrow|live|right now|what'?s the|what is the|how'?s the|how is the)/gi, '')
+        .replace(/\bin\b|\bat\b|\bfor\b|\bnear\b/gi, '')
+        .trim();
+      if (!city) city = searchQuery;
 
-        // wttr.in with format: weather condition + temperature + wind
-        const weatherRes = await axios.get(
-          `https://wttr.in/${encodeURIComponent(city)}?format=%C+%t+feels+like+%f+%w+humidity+%h&m`,
-          { timeout: 8000 }
-        );
-        const weatherData = weatherRes.data.trim();
-        if (weatherData && weatherData.length > 5) {
-          searchResult = `LIVE WEATHER for ${city}: ${weatherData}. (Source: wttr.in, fetched just now)`;
+      try {
+        const res = await axios.get(`https://wttr.in/${encodeURIComponent(city)}?format=%C+%t+feels+like+%f+%w+humidity+%h&m`, { timeout: 8000 });
+        const data = res.data.trim();
+        if (data && !data.startsWith('Unknown') && data.length > 3) {
+          searchResult = `LIVE WEATHER for ${city}: ${data}. (from wttr.in)`;
         } else {
-          searchResult = `Weather for ${city}: ${weatherData}`;
+          searchResult = `Weather for ${city} is currently unavailable.`;
         }
       } catch (err) {
-        searchResult = `Weather lookup failed: ${err.message}. Please try again.`;
+        searchResult = `Weather lookup failed: ${err.message}`;
       }
     }
 
-    // ── 🕐 Time handler (worldtimeapi.org — free, no key) ──
+    // ─── Time (worldtimeapi.org) ─────────────────────
     else if (searchQuery.match(/\b(time|clock|current time|what time|date\b|today'?s date)\b/i)) {
-      try {
-        let location = searchQuery
-          .replace(/(time|clock|current time|what time|what'?s the time|date|today'?s date|right now)/gi, '')
-          .replace(/\bin\b|\bat\b|\bfor\b/gi, '')
-          .trim();
-        if (!location) location = 'Kolkata';
+      let location = searchQuery.replace(/(time|clock|current time|what time|what'?s the time|date|today'?s date|right now)/gi, '').replace(/\bin\b|\bat\b|\bfor\b/gi, '').trim();
+      if (!location) location = 'Kolkata';
 
-        const timeRes = await axios.get(
-          `https://worldtimeapi.org/api/timezone/Asia/${encodeURIComponent(location)}`,
-          { timeout: 8000 }
-        );
-        const tz = timeRes.data.timezone;
-        const dt = new Date(timeRes.data.datetime);
-        const timeStr = dt.toLocaleString('en-IN', { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        searchResult = `LIVE TIME in ${location} (${tz}): ${timeStr}. (Source: worldtimeapi.org, fetched just now)`;
+      try {
+        const res = await axios.get(`https://worldtimeapi.org/api/timezone/Asia/${encodeURIComponent(location)}`, { timeout: 8000 });
+        const dt = new Date(res.data.datetime);
+        const timeStr = dt.toLocaleString('en-IN', { timeZone: res.data.timezone, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        searchResult = `LIVE TIME in ${location}: ${timeStr} (${res.data.timezone}).`;
       } catch (err) {
-        searchResult = `Time lookup failed: ${err.message}. Please try again.`;
+        searchResult = `Time lookup for ${location} failed: ${err.message}`;
       }
     }
 
-    // ── 🔍 General web search (Google snippet) ──
+    // ─── General Web Search (DuckDuckGo Instant Answer) ─
     else {
       try {
-        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&hl=en`;
-        const fetchRes = await axios.get(searchUrl, {
-          timeout: 10000,
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        // 1) DuckDuckGo Instant Answer API – gives structured data
+        const duckRes = await axios.get('https://api.duckduckgo.com', {
+          params: { q: searchQuery, format: 'json', no_html: 1, skip_disambig: 1 },
+          timeout: 8000
         });
-        const body = String(fetchRes.data);
-        const snippet =
-          body.match(/<span class="st">([\s\S]*?)<\/span>/i)?.[1] ||
-          body.match(/<div class="BNeawe s3v9rd AP7Wnd">([\s\S]*?)<\/div>/i)?.[1] ||
-          body.match(/<div class="BNeawe iBp4i AP7Wnd">([\s\S]*?)<\/div>/i)?.[1] ||
-          body.match(/<div class="kno-rdesc">([\s\S]*?)<\/div>/i)?.[1] ||
-          body.match(/<div class="LGOjhe"[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i)?.[1] ||
-          '';
-        searchResult = snippet.replace(/<[^>]+>/g, '').trim().substring(0, 1200) || 'No usable information found. Try a different query.';
+
+        const duck = duckRes.data;
+        let instantText = '';
+
+        // Extract the best available answer
+        if (duck.AbstractText) instantText = duck.AbstractText;
+        else if (duck.Answer) instantText = duck.Answer;
+        else if (duck.Definition) instantText = duck.Definition;
+        else if (duck.Heading && duck.AbstractText) instantText = `${duck.Heading}: ${duck.AbstractText}`;
+        else if (duck.RelatedTopics && duck.RelatedTopics.length > 0) {
+          instantText = duck.RelatedTopics.slice(0, 3).map(t => t.Text || t).join(' | ');
+        }
+
+        if (instantText && instantText.length > 20) {
+          searchResult = instantText.substring(0, 1500);
+        } else {
+          // 2) Fallback to DuckDuckGo Lite HTML scrape (clean results)
+          const liteRes = await axios.get('https://lite.duckduckgo.com/lite/', {
+            params: { q: searchQuery },
+            timeout: 8000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DoraBot/2.0)' }
+          });
+          const html = liteRes.data;
+          // Extract result snippets from the simple HTML
+          const snippets = [];
+          const rowPattern = /<a[^>]*class="result-link"[^>]*>([\s\S]*?)<\/a>\s*<span[^>]*>([\s\S]*?)<\/span>/gi;
+          let match;
+          while ((match = rowPattern.exec(html)) !== null) {
+            snippets.push(match[2].replace(/<[^>]+>/g, '').trim());
+            if (snippets.length >= 3) break;
+          }
+          if (snippets.length > 0) {
+            searchResult = snippets.join(' | ').substring(0, 1500);
+          } else {
+            searchResult = `No information found for "${searchQuery}".`;
+          }
+        }
       } catch (err) {
-        searchResult = `Search failed: ${err.message}`;
+        searchResult = `Search failed: ${err.message}. Please try again later.`;
       }
     }
 
-    // Feed result back to AI
+    // Feed result back to AI as system message
     const resultMessage = {
       role: 'system',
-      content: `Search result for "${searchQuery}": ${searchResult}\n\nYou MUST use this information to answer the user. Do NOT say you can't access real-time data — you now have it.`
+      content: `Search result for "${searchQuery}": ${searchResult}\n\nUse this information to write a complete final answer. Do NOT mention the search.`
     };
     currentMessages = [systemMessage, ...messages, { role: 'assistant', content: response }, resultMessage];
     response = await callAI(currentMessages);
