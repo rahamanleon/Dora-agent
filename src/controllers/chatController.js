@@ -1,5 +1,6 @@
 const agentService = require('../services/agentService');
 const memoryService = require('../services/memoryService');
+const mistakeService = require('../services/mistakeService');   // ✨ NEW
 
 async function chat(req, res) {
   try {
@@ -92,10 +93,27 @@ async function getHistory(req, res) {
   }
 }
 
+// ✨ NEW: Feedback endpoint for learning from mistakes
+async function submitFeedback(req, res) {
+  try {
+    const { user_id, query, wrong_answer, correction } = req.body;
+
+    if (!user_id || !query || !correction) {
+      return res.status(400).json({ error: 'user_id, query, correction required' });
+    }
+
+    mistakeService.recordMistake(user_id, query, wrong_answer || '', correction);
+    res.json({ message: 'Feedback recorded. I’ll learn from this mistake.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 module.exports = {
   chat,
   getMemory,
   saveMemory,
   deleteMemory,
-  getHistory
+  getHistory,
+  submitFeedback   // ✨ added
 };
