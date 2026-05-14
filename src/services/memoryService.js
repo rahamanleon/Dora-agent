@@ -3,7 +3,6 @@ const Conversation = require('../models/Conversation');
 
 class MemoryService {
   constructor() {
-    // In-memory fallback storage
     this.memoryCache = new Map();
     this.conversationCache = new Map();
   }
@@ -13,15 +12,11 @@ class MemoryService {
       return await operation();
     } catch (err) {
       const errorPatterns = [
-        'not allowed',
-        'Unauthorized',
-        'not authorized',
-        'does not have permission',
-        'user is not allowed'
+        'not allowed', 'Unauthorized', 'not authorized',
+        'does not have permission', 'user is not allowed'
       ];
-      const isPermissionError = err.code === 8000 || 
+      const isPermissionError = err.code === 8000 ||
         errorPatterns.some(p => err.message && err.message.toLowerCase().includes(p.toLowerCase()));
-      
       if (isPermissionError) {
         console.warn('[MemoryService] MongoDB permission denied, using in-memory fallback:', err.message);
         return fallback;
@@ -69,7 +64,21 @@ class MemoryService {
     ));
   }
 
-  async saveConversation(userId, role, content) {
+  // ✨ UPDATED: now accepts either a single message OR an array of messages
+  async saveConversation(userId, messagesOrRole, maybeContent) {
+    if (Array.isArray(messagesOrRole)) {
+      // Array of {role, content} objects
+      for (const msg of messagesOrRole) {
+        await this._saveSingleConversation(userId, msg.role, msg.content);
+      }
+      return;
+    }
+    // Single call: saveConversation(userId, role, content)
+    return this._saveSingleConversation(userId, messagesOrRole, maybeContent);
+  }
+
+  // Internal single save
+  async _saveSingleConversation(userId, role, content) {
     return this.safeOp(async () => {
       const conv = new Conversation({ user_id: userId, role, content });
       await conv.save();
