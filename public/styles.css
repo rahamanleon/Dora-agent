@@ -1,4 +1,4 @@
-/* Dora AI Web UI - Clean Modern Styles */
+/* Dora AI Web UI - Clean Modern Styles (with image support) */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -150,6 +150,16 @@ body {
 
 .message-time { font-size: 10px; color: #555; }
 
+/* --- NEW: Image inside a message bubble --- */
+.message-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-top: 6px;
+  display: block;
+  object-fit: cover;
+}
+
 /* Typing Indicator */
 .typing-indicator {
   display: flex;
@@ -186,18 +196,38 @@ body {
   flex-shrink: 0;
 }
 
+/* --- UPDATED: Input wrapper now supports image preview and attach button --- */
 .input-wrapper {
   display: flex;
+  flex-wrap: wrap;                 /* allow preview to take full width on top */
   gap: 8px;
   background: #0f0f1a;
   border: 1px solid #2a2a3e;
   border-radius: 14px;
-  padding: 8px 8px 8px 14px;
-  align-items: flex-end;
+  padding: 8px 8px 8px 8px;
+  align-items: center;
 }
 
 .input-wrapper:focus-within {
   border-color: #6c63ff;
+}
+
+/* Attach (paperclip) button */
+.attach-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.attach-btn:hover {
+  background: #2a2a3e;
+  color: #e0e0e0;
 }
 
 #message-input {
@@ -216,7 +246,51 @@ body {
 
 #message-input::placeholder { color: #555; }
 
-.input-actions { display: flex; gap: 6px; align-items: center; }
+/* The row containing clear and send buttons */
+.input-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* --- NEW: Image preview bar (appears when an image is selected) --- */
+.image-preview {
+  width: 100%;                     /* takes full width of the wrapper */
+  display: none;                   /* hidden by default, overridden by JS */
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1e1e32;
+  border-radius: 8px;
+  order: -1;                       /* push it to the top of the flex wrap order */
+}
+
+.preview-thumb {
+  max-height: 50px;
+  max-width: 70px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #2a2a3e;
+}
+
+.remove-img-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.remove-img-btn:hover {
+  background: #e03e3e;
+}
 
 .btn-clear {
   padding: 6px 12px;
@@ -261,4 +335,5 @@ body {
   .chat-area { padding: 14px; }
   .message { max-width: 90%; }
   .input-area { padding: 10px 14px 12px; }
-}
+  .message-image { max-width: 150px; max-height: 150px; }
+  }
