@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -55,18 +55,7 @@ async function start() {
     await toolRegistry.loadTools();
     console.log(`Tools loaded: ${toolRegistry.list().join(', ')}`);
 
-    // Connect to MongoDB using config
-    // Strip unsupported query params from URI — mongoose 8.x driver handles these via options
-    const rawUri = config.mongodb.uri;
-    const uriObj = new URL(rawUri);
-    const dbName = uriObj.pathname.replace(/^\//, ''); // remove leading /
-    const cleanUri = `${uriObj.protocol}//${uriObj.host}${uriObj.pathname}`;
-    
-    await mongoose.connect(cleanUri, {
-      dbName: dbName || undefined,
-      retryWrites: true,
-      w: 'majority'
-    });
+    await mongoose.connect(config.mongodb.uri);
     console.log('Connected to MongoDB');
 
     // Start server — respect PORT env var (Render sets this) or config
