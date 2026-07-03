@@ -10,7 +10,7 @@
 
 ## Development Setup
 ```bash
-git clone https://github.com/YOUR_USERNAME/Dora-agent.git
+git clone https://github.com/rahamanleon/Dora-agent.git
 cd Dora-agent
 npm install
 npm run dev
