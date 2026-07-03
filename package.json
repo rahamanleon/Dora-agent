@@ -31,5 +31,6 @@
   "bugs": {
     "url": "https://github.com/rahamanleon/Dora-agent/issues"
   },
-  "homepage": "https://github.com/rahamanleon/Dora-agent"
+  "homepage": "https://github.com/rahamanleon/Dora-agent",
+  "license": "MIT"
 }
