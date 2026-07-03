@@ -51,3 +51,13 @@ MIT &mdash; see [LICENSE](LICENSE).
 ## 📬 Links & Contact
 - **Repository**: [https://github.com/rahamanleon/Dora-agent](https://github.com/rahamanleon/Dora-agent)
 - **Issues**: [https://github.com/rahamanleon/Dora-agent/issues](https://github.com/rahamanleon/Dora-agent/issues)
+
+
+---
+
+## 📬 Contact
+
+- **Author**: [Rahaman Leon](https://github.com/rahamanleon)
+- **Email**: rahamanleon16@gmail.com
+- **GitHub**: [https://github.com/rahamanleon](https://github.com/rahamanleon)
+- **Repository**: [https://github.com/rahamanleon/Dora-agent](https://github.com/rahamanleon/Dora-agent)
