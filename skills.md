@@ -1,7 +1,7 @@
 ---
 name: dora-api
 description: Dora API - AI agent service with memory, tools, and skill registry. Built with Node.js, MongoDB, Groq LLM, and dynamic skill loading.
-homepage: https://github.com/leoxs/dora-api
+homepage: https://github.com/rahamanleon/dora-api
 metadata: {"nanobot":{"emoji":"🤖","category":"api","requires":{"runtime":"nodejs","env":["GROQ_API_KEY","MONGODB_URI"]}}}
 ---
 
