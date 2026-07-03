@@ -2,7 +2,7 @@
   "name": "dora-api",
   "version": "1.0.0",
   "description": "Lightweight AI Agent API with memory and tools",
-  "author": "Rahaman Leon",
+  "author": "Rahaman Leon (rahamanleon16@gmail.com)",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
