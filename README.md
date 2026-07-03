@@ -4,6 +4,9 @@
 
 ## Features
 
+[![Author](https://img.shields.io/badge/Author-Rahaman%20Leon-blue)](https://github.com/rahamanleon)
+
+
 - 💬 **AI Chat** — natural conversation with Groq LLM (free tier)
 - 🧠 **Persistent Memory** — MongoDB-backed user memories persist across sessions
 - 🔍 **Web Tools** — search, URL fetching, image generation
@@ -41,3 +44,10 @@ Edit `config.json` with your:
 ## License
 
 MIT &mdash; see [LICENSE](LICENSE).
+
+
+---
+
+## 📬 Links & Contact
+- **Repository**: [https://github.com/rahamanleon/Dora-agent](https://github.com/rahamanleon/Dora-agent)
+- **Issues**: [https://github.com/rahamanleon/Dora-agent/issues](https://github.com/rahamanleon/Dora-agent/issues)
